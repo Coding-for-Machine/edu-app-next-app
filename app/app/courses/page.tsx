@@ -1,75 +1,110 @@
-import type { Metadata } from "next"
-import { Filter, Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import CourseCard from "@/components/course-card"
-import { courses } from "@/lib/data"
+"use client"
 
-export const metadata: Metadata = {
-  title: "Kurslar | 42.uz Clone",
-  description: "42.uz platformasidagi barcha kurslar",
-}
+import { useState, useEffect } from "react"
+import { motion } from "framer-motion"
+import CourseList from "@/components/course-list"
+import CourseFilters from "@/components/course-filters"
+import LoadingSpinner from "@/components/loading-spinner"
+import PageTransition from "@/components/page-transition"
+import { fetchAllCourses } from "@/lib/api"
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<any[]>([])
+  const [filteredCourses, setFilteredCourses] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [activeFilters, setActiveFilters] = useState<any>({
+    categories: [],
+    levels: [],
+    priceRange: [0, 100],
+    ratings: [],
+    languages: [],
+  })
+
+  useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const coursesData = await fetchAllCourses()
+        setCourses(coursesData)
+        setFilteredCourses(coursesData)
+      } catch (error) {
+        console.error("Failed to load courses", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadCourses()
+  }, [])
+
+  const handleFilterChange = (filters: any) => {
+    setActiveFilters(filters)
+
+    // Apply filters
+    let filtered = [...courses]
+
+    // Filter by category
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter((course) => filters.categories.includes(course.category))
+    }
+
+    // Filter by level
+    if (filters.levels.length > 0) {
+      filtered = filtered.filter((course) => filters.levels.includes(course.level))
+    }
+
+    // Filter by price range
+    filtered = filtered.filter(
+      (course) => course.price >= filters.priceRange[0] && course.price <= filters.priceRange[1],
+    )
+
+    // Filter by rating
+    if (filters.ratings.length > 0) {
+      const minRating = Math.min(...filters.ratings)
+      filtered = filtered.filter((course) => course.rating >= minRating)
+    }
+
+    // Filter by language
+    if (filters.languages.length > 0) {
+      filtered = filtered.filter((course) => filters.languages.includes(course.language))
+    }
+
+    setFilteredCourses(filtered)
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-indigo-600 text-white py-16">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Kurslar</h1>
-          <p className="max-w-2xl">
-            Zamonaviy kasblarni o&apos;rganish va IT sohasida o&apos;z o&apos;rnini topish uchun eng yaxshi kurslar
-          </p>
-        </div>
-      </div>
+    <PageTransition>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-12">
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-3xl font-bold mb-8"
+          >
+            Barcha kurslar
+          </motion.h1>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-xl shadow-sm p-4 mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <Input placeholder="Kurslarni qidirish..." className="pl-10" />
-            </div>
-            <div className="flex gap-4">
-              <Select>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Kategoriya" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Barcha kurslar</SelectItem>
-                  <SelectItem value="backend">Backend</SelectItem>
-                  <SelectItem value="frontend">Frontend</SelectItem>
-                  <SelectItem value="mobile">Mobil dasturlash</SelectItem>
-                  <SelectItem value="ux">UX dizayn</SelectItem>
-                  <SelectItem value="graphic">Grafik dizayn</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="lg:col-span-1"
+            >
+              <CourseFilters onFilterChange={handleFilterChange} activeFilters={activeFilters} />
+            </motion.div>
 
-              <Select>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Daraja" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Barcha darajalar</SelectItem>
-                  <SelectItem value="beginner">Boshlang'ich</SelectItem>
-                  <SelectItem value="intermediate">O'rta</SelectItem>
-                  <SelectItem value="advanced">Yuqori</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Button variant="outline" size="icon">
-                <Filter className="h-4 w-4" />
-              </Button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="lg:col-span-3"
+            >
+              {isLoading ? <LoadingSpinner /> : <CourseList courses={filteredCourses} />}
+            </motion.div>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
-          ))}
-        </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }

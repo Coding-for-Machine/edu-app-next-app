@@ -1,395 +1,583 @@
-import type { Metadata } from "next"
+"use client"
+
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Award, BookOpen, Calendar, CheckCircle, Clock, Edit, FileText, Settings, User } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { courses } from "@/lib/data"
-
-export const metadata: Metadata = {
-  title: "Profil | 42.uz Clone",
-  description: "42.uz platformasidagi foydalanuvchi profili",
-}
+import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  BookOpen,
+  Camera,
+  BadgeIcon as Certificate,
+  CreditCard,
+  Edit,
+  Lock,
+  LogOut,
+  MessageSquare,
+  Settings,
+  User,
+  CheckCircle,
+} from "lucide-react"
+import { updateUserProfile, fetchUserProfile } from "@/lib/auth"
+import { Progress } from "@/components/ui/progress"
 
 export default function ProfilePage() {
-  // Mock user data
-  const user = {
-    name: "Abdulloh Abdurahmonov",
-    email: "abdulloh@example.com",
-    avatar: "/placeholder.svg?height=100&width=100",
-    joinDate: "May 2023",
-    bio: "Backend dasturchi bo'lishni xohlayman. Hozirda Node.js va Express o'rganmoqdaman.",
-    completedCourses: 2,
-    inProgressCourses: 3,
-    certificates: 2,
-    points: 1250,
-    level: "O'rta",
-    achievements: [
-      { id: 1, title: "Birinchi kurs", description: "Birinchi kursni tugatish", date: "10 May 2023" },
-      { id: 2, title: "Kod ustasi", description: "10 ta vazifani muvaffaqiyatli topshirish", date: "15 June 2023" },
-      { id: 3, title: "Test g'olibi", description: "5 ta testni 100% natija bilan topshirish", date: "20 July 2023" },
-    ],
+  const [isEditing, setIsEditing] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [user, setUser] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    bio: "",
+    location: "",
+    website: "",
+    avatar: "/placeholder.svg?height=200&width=200",
+  })
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const userData = await fetchUserProfile()
+        setUser(userData)
+      } catch (error) {
+        console.error("Failed to load user profile", error)
+      } finally {
+        setIsPageLoading(false)
+      }
+    }
+
+    loadUserProfile()
+  }, [])
+
+  const handleSaveProfile = async () => {
+    setIsLoading(true)
+    try {
+      await updateUserProfile(user)
+      setIsEditing(false)
+    } catch (error) {
+      console.error("Failed to update profile", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  // Mock enrolled courses with progress
-  const enrolledCourses = [
-    { ...courses[0], progress: 75, lastAccessed: "Bugun" },
-    { ...courses[1], progress: 40, lastAccessed: "Kecha" },
-    { ...courses[2], progress: 10, lastAccessed: "3 kun oldin" },
-  ]
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
 
-  // Mock completed courses
-  const completedCourses = [
-    { ...courses[3], completedDate: "15 April 2023" },
-    { ...courses[4], completedDate: "20 March 2023" },
-  ]
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+      },
+    },
+  }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md">
-                <Image
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={user.name}
-                  width={128}
-                  height={128}
-                  className="object-cover"
-                />
-              </div>
-              <Button size="icon" variant="outline" className="absolute bottom-0 right-0 rounded-full bg-white">
-                <Edit className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="text-center md:text-left md:flex-1">
-              <h1 className="text-2xl font-bold">{user.name}</h1>
-              <p className="text-gray-600">{user.email}</p>
-              <p className="text-gray-600 text-sm mt-1 flex items-center justify-center md:justify-start">
-                <Calendar className="h-4 w-4 mr-1" />
-                {user.joinDate} dan beri a&apos;zo
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
-                <Badge variant="outline" className="flex items-center">
-                  <BookOpen className="h-3 w-3 mr-1" />
-                  {user.completedCourses} ta kurs tugatilgan
-                </Badge>
-                <Badge variant="outline" className="flex items-center">
-                  <Award className="h-3 w-3 mr-1" />
-                  {user.certificates} ta sertifikat
-                </Badge>
-                <Badge variant="outline" className="flex items-center">
-                  <User className="h-3 w-3 mr-1" />
-                  {user.level}
-                </Badge>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button variant="outline">
-                <Edit className="h-4 w-4 mr-2" />
-                Profilni tahrirlash
-              </Button>
-              <Button variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Sozlamalar
-              </Button>
-            </div>
-          </div>
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="mt-4 text-gray-600">Yuklanmoqda...</p>
         </div>
       </div>
+    )
+  }
 
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen bg-gray-50"
+    >
       <div className="container mx-auto px-4 py-8">
-        <Tabs defaultValue="courses">
-          <TabsList className="mb-8">
-            <TabsTrigger value="courses">Kurslarim</TabsTrigger>
-            <TabsTrigger value="achievements">Yutuqlarim</TabsTrigger>
-            <TabsTrigger value="certificates">Sertifikatlar</TabsTrigger>
-            <TabsTrigger value="settings">Sozlamalar</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="courses" className="space-y-8">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Davom etayotgan kurslar</h2>
-
-              {enrolledCourses.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-gray-600">Siz hali birorta kursga yozilmagansiz.</p>
-                    <Button className="mt-4">
-                      <Link href="/courses">Kurslarni ko&apos;rish</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {enrolledCourses.map((course) => (
-                    <Card key={course.id} className="overflow-hidden">
-                      <div className="relative h-40">
-                        <Image
-                          src={course.image || "/placeholder.svg"}
-                          alt={course.title}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{course.title}</CardTitle>
-                        <CardDescription>{course.instructor}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Progress</span>
-                            <span className="font-medium">{course.progress}%</span>
-                          </div>
-                          <Progress value={course.progress} className="h-2" />
-                        </div>
-
-                        <div className="flex justify-between text-sm text-gray-500">
-                          <span className="flex items-center">
-                            <Clock className="h-4 w-4 mr-1" />
-                            Oxirgi faollik: {course.lastAccessed}
-                          </span>
-                        </div>
-
-                        <Link href={`/courses/${course.id}/learn/1`}>
-                          <Button className="w-full">Davom ettirish</Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Tugatilgan kurslar</h2>
-
-              {completedCourses.length === 0 ? (
-                <Card>
-                  <CardContent className="py-8 text-center">
-                    <p className="text-gray-600">Siz hali birorta kursni tugatmagansiz.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {completedCourses.map((course) => (
-                    <Card key={course.id} className="overflow-hidden">
-                      <div className="relative h-40">
-                        <Image
-                          src={course.image || "/placeholder.svg"}
-                          alt={course.title}
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute top-2 right-2">
-                          <Badge className="bg-green-600">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Tugatilgan
-                          </Badge>
-                        </div>
-                      </div>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-lg">{course.title}</CardTitle>
-                        <CardDescription>{course.instructor}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="flex justify-between text-sm text-gray-500">
-                          <span className="flex items-center">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Tugatilgan sana: {course.completedDate}
-                          </span>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Link href={`/courses/${course.id}`} className="flex-1">
-                            <Button variant="outline" className="w-full">
-                              Batafsil
-                            </Button>
-                          </Link>
-                          <Link href={`/certificates/${course.id}`} className="flex-1">
-                            <Button className="w-full">Sertifikat</Button>
-                          </Link>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="achievements" className="space-y-6">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 lg:grid-cols-4 gap-8"
+        >
+          {/* Sidebar */}
+          <motion.div variants={itemVariants} className="lg:col-span-1">
             <Card>
-              <CardHeader>
-                <CardTitle>Yutuqlar</CardTitle>
-                <CardDescription>Platformada erishgan yutuqlaringiz</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {user.achievements.map((achievement) => (
-                    <div key={achievement.id} className="flex items-start gap-4 p-4 border rounded-lg">
-                      <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <Award className="h-6 w-6 text-indigo-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold">{achievement.title}</h3>
-                        <p className="text-sm text-gray-600">{achievement.description}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          <Calendar className="h-3 w-3 inline mr-1" />
-                          {achievement.date}
-                        </p>
-                      </div>
+              <CardContent className="p-6">
+                <div className="flex flex-col items-center">
+                  <motion.div
+                    className="relative mb-4"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-md">
+                      <Image
+                        src={user.avatar || "/placeholder.svg"}
+                        alt={user.name}
+                        width={128}
+                        height={128}
+                        className="object-cover"
+                      />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    <motion.button
+                      className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full shadow-lg"
+                      whileHover={{ scale: 1.1, backgroundColor: "#2563EB" }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <Camera className="h-4 w-4" />
+                    </motion.button>
+                  </motion.div>
+                  <h2 className="text-xl font-bold">{user.name}</h2>
+                  <p className="text-gray-500 text-sm">{user.email}</p>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistika</CardTitle>
-                <CardDescription>Platformadagi faoliyatingiz statistikasi</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-indigo-600">{user.points}</div>
-                    <div className="text-sm text-gray-600">Ballar</div>
-                  </div>
-                  <div className="border rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-indigo-600">{user.completedCourses}</div>
-                    <div className="text-sm text-gray-600">Tugatilgan kurslar</div>
-                  </div>
-                  <div className="border rounded-lg p-4 text-center">
-                    <div className="text-3xl font-bold text-indigo-600">{user.certificates}</div>
-                    <div className="text-sm text-gray-600">Sertifikatlar</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="certificates" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Sertifikatlar</CardTitle>
-                <CardDescription>Platformada olgan sertifikatlaringiz</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {completedCourses.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-600">Siz hali birorta sertifikat olmagansiz.</p>
-                    <p className="text-gray-600 mt-2">Sertifikat olish uchun kurslarni tugatishingiz kerak.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {completedCourses.map((course) => (
-                      <div key={course.id} className="border rounded-lg overflow-hidden">
-                        <div className="relative h-60 bg-indigo-50">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="text-center">
-                              <FileText className="h-12 w-12 text-indigo-600 mx-auto mb-2" />
-                              <h3 className="font-bold text-lg">{course.title}</h3>
-                              <p className="text-gray-600">{course.completedDate}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="p-4 flex justify-between">
-                          <Button variant="outline">Ko&apos;rish</Button>
-                          <Button variant="outline">Yuklab olish</Button>
-                        </div>
-                      </div>
+                  <div className="w-full mt-6 space-y-2">
+                    {sidebarLinks.map((link, index) => (
+                      <motion.div
+                        key={link.href}
+                        variants={itemVariants}
+                        custom={index}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                      >
+                        <Button
+                          variant={link.href === "/profile" ? "default" : "outline"}
+                          className={`w-full justify-start ${link.href === "/profile" ? "bg-blue-600 text-white" : ""}`}
+                          asChild
+                        >
+                          <Link href={link.href}>
+                            <link.icon className="mr-2 h-4 w-4" />
+                            {link.label}
+                          </Link>
+                        </Button>
+                      </motion.div>
                     ))}
+
+                    <Separator className="my-2" />
+
+                    <motion.div variants={itemVariants} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                      <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Chiqish
+                      </Button>
+                    </motion.div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </motion.div>
 
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profil ma&apos;lumotlari</CardTitle>
-                <CardDescription>Profil ma&apos;lumotlaringizni tahrirlash</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Ism</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded-md"
-                        defaultValue={user.name.split(" ")[0]}
-                      />
+          {/* Main Content */}
+          <motion.div variants={itemVariants} className="lg:col-span-3">
+            <Tabs defaultValue="profile">
+              <TabsList className="grid w-full grid-cols-3 mb-8">
+                <TabsTrigger value="profile">Profil</TabsTrigger>
+                <TabsTrigger value="courses">Kurslar</TabsTrigger>
+                <TabsTrigger value="settings">Sozlamalar</TabsTrigger>
+              </TabsList>
+
+              {/* Profile Tab */}
+              <TabsContent value="profile">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Profil ma'lumotlari</CardTitle>
+                      <CardDescription>Shaxsiy ma'lumotlaringizni ko'ring va tahrirlang</CardDescription>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Familiya</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded-md"
-                        defaultValue={user.name.split(" ")[1]}
-                      />
+                    {!isEditing ? (
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                        <Button variant="outline" onClick={() => setIsEditing(true)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Tahrirlash
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      <div className="flex space-x-2">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button variant="outline" onClick={() => setIsEditing(false)}>
+                            Bekor qilish
+                          </Button>
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                          <Button onClick={handleSaveProfile} disabled={isLoading}>
+                            {isLoading ? "Saqlanmoqda..." : "Saqlash"}
+                          </Button>
+                        </motion.div>
+                      </div>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {isEditing ? (
+                        <motion.div variants={containerVariants} initial="hidden" animate="visible">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {profileFields.map((field, index) => (
+                              <motion.div key={field.id} variants={itemVariants} custom={index} className="space-y-2">
+                                <Label htmlFor={field.id}>{field.label}</Label>
+                                <Input
+                                  id={field.id}
+                                  type={field.type}
+                                  value={user[field.id as keyof typeof user] as string}
+                                  onChange={(e) => setUser({ ...user, [field.id]: e.target.value })}
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                          <motion.div variants={itemVariants} className="space-y-2 mt-6">
+                            <Label htmlFor="bio">Bio</Label>
+                            <Textarea
+                              id="bio"
+                              rows={4}
+                              value={user.bio}
+                              onChange={(e) => setUser({ ...user, bio: e.target.value })}
+                            />
+                          </motion.div>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          variants={containerVariants}
+                          initial="hidden"
+                          animate="visible"
+                          className="space-y-6"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {profileFields.map((field, index) => (
+                              <motion.div key={field.id} variants={itemVariants} custom={index}>
+                                <h3 className="text-sm font-medium text-gray-500">{field.label}</h3>
+                                <p className="mt-1">
+                                  {field.id === "website" ? (
+                                    <a
+                                      href={user[field.id as keyof typeof user] as string}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline"
+                                    >
+                                      {user[field.id as keyof typeof user] as string}
+                                    </a>
+                                  ) : (
+                                    (user[field.id as keyof typeof user] as string)
+                                  )}
+                                </p>
+                              </motion.div>
+                            ))}
+                          </div>
+                          <motion.div variants={itemVariants}>
+                            <h3 className="text-sm font-medium text-gray-500">Bio</h3>
+                            <p className="mt-1">{user.bio}</p>
+                          </motion.div>
+                        </motion.div>
+                      )}
                     </div>
-                  </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Email</label>
-                    <input type="email" className="w-full p-2 border rounded-md" defaultValue={user.email} />
-                  </div>
+              {/* Courses Tab */}
+              <TabsContent value="courses">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Mening kurslarim</CardTitle>
+                    <CardDescription>Siz ro'yxatdan o'tgan va o'rganayotgan kurslar</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+                      {/* Active Courses */}
+                      <motion.div variants={itemVariants}>
+                        <h3 className="text-lg font-semibold mb-4">Faol kurslar</h3>
+                        <div className="space-y-4">
+                          {activeCourses.map((course, index) => (
+                            <motion.div
+                              key={course.id}
+                              variants={itemVariants}
+                              custom={index}
+                              whileHover={{ scale: 1.01 }}
+                              className="border rounded-lg p-4 transition-shadow hover:shadow-md"
+                            >
+                              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                <div className="w-full md:w-1/4">
+                                  <Image
+                                    src={course.image || "/placeholder.svg"}
+                                    alt={course.title}
+                                    width={200}
+                                    height={120}
+                                    className="rounded-md object-cover w-full h-32"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-lg">{course.title}</h4>
+                                  <p className="text-gray-500 text-sm mb-2">{course.instructor}</p>
+                                  <div className="mb-2">
+                                    <div className="flex items-center justify-between text-sm mb-1">
+                                      <span>Progress: {course.progress}%</span>
+                                      <span>
+                                        {course.completedLessons}/{course.totalLessons} darslar
+                                      </span>
+                                    </div>
+                                    <Progress value={course.progress} className="h-2" />
+                                  </div>
+                                  <div className="flex mt-3">
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                      <Button size="sm" asChild>
+                                        <Link href={`/courses/${course.id}`}>Davom ettirish</Link>
+                                      </Button>
+                                    </motion.div>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Bio</label>
-                    <textarea className="w-full p-2 border rounded-md h-24" defaultValue={user.bio}></textarea>
-                  </div>
+                      {/* Completed Courses */}
+                      <motion.div variants={itemVariants}>
+                        <h3 className="text-lg font-semibold mb-4">Tugatilgan kurslar</h3>
+                        <div className="space-y-4">
+                          {completedCourses.map((course, index) => (
+                            <motion.div
+                              key={course.id}
+                              variants={itemVariants}
+                              custom={index}
+                              whileHover={{ scale: 1.01 }}
+                              className="border rounded-lg p-4 transition-shadow hover:shadow-md"
+                            >
+                              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                <div className="w-full md:w-1/4">
+                                  <Image
+                                    src={course.image || "/placeholder.svg"}
+                                    alt={course.title}
+                                    width={200}
+                                    height={120}
+                                    className="rounded-md object-cover w-full h-32"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold text-lg">{course.title}</h4>
+                                  <p className="text-gray-500 text-sm mb-2">{course.instructor}</p>
+                                  <div className="mb-2">
+                                    <div className="flex items-center justify-between text-sm mb-1">
+                                      <span className="flex items-center text-green-600 font-medium">
+                                        <CheckCircle className="h-4 w-4 mr-1" />
+                                        Tugatilgan
+                                      </span>
+                                      <span>{course.completionDate}</span>
+                                    </div>
+                                    <Progress value={100} className="h-2 bg-gray-100" />
+                                  </div>
+                                  <div className="flex mt-3 space-x-2">
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                      <Button size="sm" variant="outline" asChild>
+                                        <Link href={`/courses/${course.id}`}>Kursni ko'rish</Link>
+                                      </Button>
+                                    </motion.div>
+                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                      <Button size="sm" asChild>
+                                        <Link href={`/certificates/${course.id}`}>Sertifikat</Link>
+                                      </Button>
+                                    </motion.div>
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  <Button>Saqlash</Button>
-                </form>
-              </CardContent>
-            </Card>
+              {/* Settings Tab */}
+              <TabsContent value="settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Hisob sozlamalari</CardTitle>
+                    <CardDescription>Hisobingiz bilan bog'liq sozlamalarni boshqaring</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
+                      {/* Account Settings */}
+                      <motion.div variants={itemVariants}>
+                        <h3 className="text-lg font-semibold mb-4">Hisob</h3>
+                        <div className="space-y-4">
+                          {accountSettings.map((setting, index) => (
+                            <motion.div
+                              key={index}
+                              variants={itemVariants}
+                              custom={index}
+                              className="flex items-center justify-between"
+                            >
+                              <div>
+                                <h4 className="font-medium">{setting.title}</h4>
+                                <p className="text-sm text-gray-500">{setting.description}</p>
+                              </div>
+                              {setting.type === "button" ? (
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                  <Button variant="outline">
+                                    <Lock className="mr-2 h-4 w-4" />
+                                    {setting.action}
+                                  </Button>
+                                </motion.div>
+                              ) : (
+                                <Switch defaultChecked={setting.defaultChecked} />
+                              )}
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Parolni o&apos;zgartirish</CardTitle>
-                <CardDescription>
-                  Hisobingiz xavfsizligini ta&apos;minlash uchun parolingizni o&apos;zgartiring
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Joriy parol</label>
-                    <input type="password" className="w-full p-2 border rounded-md" />
-                  </div>
+                      {/* Privacy Settings */}
+                      <motion.div variants={itemVariants}>
+                        <h3 className="text-lg font-semibold mb-4">Maxfiylik</h3>
+                        <div className="space-y-4">
+                          {privacySettings.map((setting, index) => (
+                            <motion.div
+                              key={index}
+                              variants={itemVariants}
+                              custom={index}
+                              className="flex items-center justify-between"
+                            >
+                              <div>
+                                <h4 className="font-medium">{setting.title}</h4>
+                                <p className="text-sm text-gray-500">{setting.description}</p>
+                              </div>
+                              <Switch defaultChecked={setting.defaultChecked} />
+                            </motion.div>
+                          ))}
+                        </div>
+                      </motion.div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Yangi parol</label>
-                    <input type="password" className="w-full p-2 border rounded-md" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Yangi parolni tasdiqlang</label>
-                    <input type="password" className="w-full p-2 border rounded-md" />
-                  </div>
-
-                  <Button>Parolni o&apos;zgartirish</Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                      {/* Danger Zone */}
+                      <motion.div variants={itemVariants}>
+                        <h3 className="text-lg font-semibold mb-4 text-red-600">Xavfli zona</h3>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">Hisobni o'chirish</h4>
+                              <p className="text-sm text-gray-500">
+                                Hisobingizni va barcha ma'lumotlaringizni butunlay o'chirish
+                              </p>
+                            </div>
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            >
+                              <Button variant="destructive">Hisobni o'chirish</Button>
+                            </motion.div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </motion.div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }
+
+// Sidebar links
+const sidebarLinks = [
+  { icon: User, label: "Profil", href: "/profile" },
+  { icon: BookOpen, label: "Mening kurslarim", href: "/profile/courses" },
+  { icon: Certificate, label: "Sertifikatlar", href: "/profile/certificates" },
+  { icon: MessageSquare, label: "Xabarlar", href: "/profile/messages" },
+  { icon: CreditCard, label: "To'lovlar", href: "/profile/payments" },
+  { icon: Settings, label: "Sozlamalar", href: "/profile/settings" },
+]
+
+// Profile fields
+const profileFields = [
+  { id: "name", label: "To'liq ism", type: "text" },
+  { id: "email", label: "Email", type: "email" },
+  { id: "phone", label: "Telefon", type: "text" },
+  { id: "location", label: "Joylashuv", type: "text" },
+  { id: "website", label: "Veb-sayt", type: "text" },
+]
+
+// Account settings
+const accountSettings = [
+  {
+    title: "Parolni o'zgartirish",
+    description: "Hisobingiz xavfsizligini ta'minlash uchun parolingizni yangilang",
+    type: "button",
+    action: "O'zgartirish",
+  },
+  {
+    title: "Ikki faktorli autentifikatsiya",
+    description: "Hisobingizni qo'shimcha xavfsizlik qatlami bilan himoya qiling",
+    type: "switch",
+    defaultChecked: false,
+  },
+  {
+    title: "Email xabarnomalar",
+    description: "Kurslar, yangiliklar va maxsus takliflar haqida xabarnomalarni boshqaring",
+    type: "switch",
+    defaultChecked: true,
+  },
+]
+
+// Privacy settings
+const privacySettings = [
+  {
+    title: "Profil ko'rinishi",
+    description: "Profilingiz boshqa foydalanuvchilarga ko'rinishi",
+    defaultChecked: true,
+  },
+  {
+    title: "O'quv faoliyati",
+    description: "O'quv faoliyatingiz boshqa foydalanuvchilarga ko'rinishi",
+    defaultChecked: false,
+  },
+]
+
+// Sample data for courses
+const activeCourses = [
+  {
+    id: "1",
+    title: "Web Dasturlash Asoslari",
+    instructor: "Alisher Isaev",
+    image: "/placeholder.svg?height=200&width=400",
+    progress: 65,
+    completedLessons: 13,
+    totalLessons: 20,
+  },
+  {
+    id: "2",
+    title: "JavaScript to'liq kurs",
+    instructor: "Dilshod Rahimov",
+    image: "/placeholder.svg?height=200&width=400",
+    progress: 30,
+    completedLessons: 6,
+    totalLessons: 20,
+  },
+]
+
+const completedCourses = [
+  {
+    id: "3",
+    title: "HTML va CSS asoslari",
+    instructor: "Aziza Karimova",
+    image: "/placeholder.svg?height=200&width=400",
+    completionDate: "15.03.2023",
+  },
+]
